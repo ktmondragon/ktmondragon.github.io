@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Final Project</title>
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <link href='https://fonts.googleapis.com/css?family=Kaushan+Script' rel='stylesheet' type='text/css'>
+    </script>
+    <style>
+    h1{
+        font-family: 'Kaushan Script', cursive;
+        color: #F24C05;
+        width: 160px;
+        font-size: 20px;
+        margin-left: 15px;
+
+    }
+    p{
+      width: 200px;
+       margin-left: 10px;
+       color: #F24C05;
+    }
+
+    #sidebar{
+      background:#F2EFED;
+      border-right:1px solid #000;
+      border-bottom: 1px solid #000;
+      width:160px;
+      float:left;
+      height:500px;
+    }
+    .search_form{
+      background:#4051CF;
+      padding:20px 10px;
+      display:block;
+    }
+    .search_form input {
+       background: #F9F9F9;
+       border-radius: 4px;
+       border-width: 1px;
+      padding: 2px 0px 2px;
+      }
+      .search_form button {
+       padding:2px 10px 3px;
+       border:0;
+       background:#000;
+       color:#fff;
+       text-shadow:1px 1px 1px #000;
+       border-radius:5px;
+       -moz-border-radius:5px;
+       -webkit-border-radius:5px;
+       cursor:pointer;
+      }
+      .search_form button:hover {
+       background:#F24C05;
+      }
+      #sidebar .history_list {
+       display:block;
+       border-top:1px solid #0719A6;
+      }
+      #sidebar .history_list a {
+       display:block;
+       padding:5px 10px;
+       color: #000;
+      }
+      #sidebar .history_list a:hover {
+       background:#f2f2f2;
+      }
+      #contenido {
+       float:left;
+       width:570px;
+       height: 460px;
+       padding:20px 40px 20px 10px;
+       background-color: #F7F8FA;
+       position: absolute;
+       margin-left: 161px;
+      }
+      .container {
+       float:left;
+       margin-right:10px;
+       width:100px;
+       height:100px;
+       overflow:hidden;
+       box-shadow:0 0 3px #bebdbe;
+       border:1px solid #bebdbe;
+       background:#fff;
+       padding:1px;
+       border-radius:8px;
+       -moz-border-radius:8px;
+       -webkit-border-radius:8px;
+       margin-bottom:10px;
+      }
+      .container:nth-child(5n+6) {
+       clear:left
+      }
+      .container img {
+       border-radius:8px;
+       -moz-border-radius:8px;
+       -webkit-border-radius:8px;
+       border:0;
+      }
+     
+ 
+    </style>
+
+    <script>
+    function searchImg(TheKeywords) {
+ $.getJSON("http://api.flickr.com/services/feeds/photos_public.gne?jsoncallback=?",
+ {
+  tags    : TheKeywords,
+  tagmode : 'all',
+  limit   : '20',
+  format  : 'json'
+ },
+ function(data){
+  var imgInsert = "";
+  var items = [];
+ 
+  //create the element that holds the images
+  $('<div />', {
+    'id': 'contenido',
+    html: items.join('')
+  }).appendTo('#wrapper').insertAfter('#sidebar');
+ 
+  /* the main parent will apend to the wrapper */
+  $.each(data.items, function(i,item){
+    if (i == 20) return false;
+      var imgThumb = item.media.m.split('m.jpg')[0] + 'm.jpg'; //size of the image small max 240px
+      var imgLarge = item.media.m.split('m.jpg')[0] + 'b.jpg'; //large size of the image for fancybox
+      imgInsert += '<div class="container">';
+      imgInsert += '<a href="' + imgLarge + '" rel="flickr_group" class="big_img" title="' + item.title + '">';
+      imgInsert += '<img title="' + item.title + '" src="' + imgThumb + '" alt="' + item.title + '" />';
+      imgInsert += '</a></div>';
+   });
+   var cachedItems = $(imgInsert).data('cached', imgInsert);
+   $('#contenido').append(imgInsert).addClass(TheKeywords).data('cached', data.items);
+   /* create a history list and insert it into the left sidebar */
+   var listChached = '';
+   listChached += '<div class="history_list">';
+   listChached += '<a class="' + TheKeywords + '_chached" href="javascript:;">';
+   listChached +=  TheKeywords + '</a></div>';
+ 
+   $(listChached).appendTo('#sidebar').insertAfter('form');
+ 
+   $('.' + TheKeywords + '_chached').click(function(){
+ 
+    /* if the contenido has items then remove them
+    and insert the chathed itmes */
+    if ( $('#contenido').length > 0 ) {  
+      $('#contenido').empty();
+    $('#contenido').html(cachedItems);
+ 
+     //The cached images
+     $("a[rel=flickr_group]").fancybox({
+       'transitionIn': 'none',
+       'transitionOut': 'none',
+       'titlePosition': 'over',
+       'titleFormat': function (title, currentArray, currentIndex, currentOpts) {
+         return '<span id="fancybox-title-over">Image ' + (currentIndex + 1) + ' / ' + currentArray.length + (title.length ? ' &nbsp; ' + title : '') + '</span>';
+        }
+     });                             
+    }                        
+   })
+ 
+   //The new search
+   $("a[rel=flickr_group]").fancybox({
+     'transitionIn': 'none', 
+     'transitionOut': 'none',
+     'titlePosition': 'over',
+     'titleFormat': function (title, currentArray, currentIndex, currentOpts) {
+    return '<span id="fancybox-title-over">Image ' + (currentIndex + 1) + ' / ' + currentArray.length + (title.length ? ' &nbsp; ' + title : '') + '</span>';
+     }
+    });                
+  });
+}
+ 
+$(function(){
+ $('.search_form').submit(function(){
+  //if it has been a search allready remove the old contenido and replace it with the new search
+  if ( $('#contenido').length > 0 ) {
+    $('#contenido').remove();
+  }                        
+  searchImg(document.getElementById('keywords').value );
+  return false;
+ })
+})
+    </script>
+    
+</head>
+
+<body>
+
+<div id="wrapper">
+
+ <div id="sidebar">
+  <h1>Search Images from Flickr</h1>
+  <p>
+    <p>Ready for your search</p>
+  <form class="search_form" action="" method="buscador">
+   <input id="keywords" type="text" /> 
+   <button id="search" name="search">Search</button></form>
+  </div>
+</div>
+
+
+
+</body>
+
+</html>
